@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>pdf-to-img</title>
+    <script type='text/javascript' src='js/pdf.js'></script>
+    <script type='text/javascript' src='js/jquery-2.0.2.min.js'></script>
+</head>
+<body>
+
+    <div>
+        <p>
+            File:
+            <input id='pdf' name='pdf' type='file'/>
+        </p>
+
+        <p>
+            Scale:
+            <input id='scale' name='scale' type='number' value="1.0" step="0.5"/>
+        </p>
+
+        <button id='convert' name='convert'>Convert</button>
+    </div>
+    <br>
+
+    <div>
+        <p>Output Image:</p>
+        <img id='output-image'/>
+    </div>
+
+    <div>
+        <p>Output Canvas:</p>
+        <canvas id='output-canvas'></canvas>
+    </div>
+
+    <script type="text/javascript">
+        PDFJS.disableWorker = true;
+
+        var BASE64_MARKER = ';base64,';
+
+        function convertDataURIToBinary(dataURI) {
+            var base64Index = dataURI.indexOf(BASE64_MARKER) + BASE64_MARKER.length;
+            var base64 = dataURI.substring(base64Index);
+            var raw = window.atob(base64);
+            var rawLength = raw.length;
+            var array = new Uint8Array(new ArrayBuffer(rawLength));
+
+            for(i = 0; i < rawLength; i++) {
+                array[i] = raw.charCodeAt(i);
+            }
+            return array;
+        }
+
+        var reader = new FileReader();
+        reader.onload = function (e) {
+            try
+            {
+                var pdfAsArray = convertDataURIToBinary(e.target.result);
+
+                PDFJS.getDocument(pdfAsArray).then(function (pdf) {
+                    pdf.getPage(1).then(function (page) {
+                        var scale = $('#scale').val();
+                        var viewport = page.getViewport(scale);
+
+                        var canvas = $('#output-canvas')[0];
+                        var context = canvas.getContext('2d');
+                        context.clearRect(0, 0, canvas.width,canvas.height);
+                        canvas.height = viewport.height;
+                        canvas.width = viewport.width;
+
+                        var pageRendering = page.render({canvasContext: context, viewport: viewport}).then(function(){
+                            $('#output-image')[0].src = canvas.toDataURL();
+                        });
+                    });
+                });
+            }
+            catch(e)
+            {
+                console.log(e);
+                $(body).append('<p>error on converting pdf.</p>');
+            }
+        };
+
+        $('#convert').click(function(){
+            var file = $('#pdf')[0].files[0];
+
+            $('#output-image').data('name', file.name + '.png');
+            reader.readAsDataURL(file);
+        });
+    </script>
+</body>
+</html>
