@@ -2,8 +2,9 @@
 <html>
 <head>
     <title>pdf-to-img</title>
+    <script type='text/javascript' src='js/jquery-2.1.0.min.js'></script>
     <script type='text/javascript' src='js/pdf.min.js'></script>
-    <script type='text/javascript' src='js/jquery-2.0.2.min.js'></script>
+    <script type='text/javascript' src='js/compatibility.min.js'></script>
 </head>
 <body>
 
@@ -15,7 +16,7 @@
 
         <p>
             Scale:
-            <input id='scale' name='scale' type='number' value="1.0" step="0.5"/>
+            <input id='scale' name='scale' type='number' value="1.0" step="0.25"/>
         </p>
 
         <button id='convert' name='convert'>Convert</button>
@@ -67,9 +68,43 @@
                         canvas.height = viewport.height;
                         canvas.width = viewport.width;
 
-                        var pageRendering = page.render({canvasContext: context, viewport: viewport}).then(function(){
+                        // finally query the various pixel ratios
+                        devicePixelRatio = window.devicePixelRatio || 1;
+                        backingStoreRatio = context.webkitBackingStorePixelRatio ||
+                                        context.mozBackingStorePixelRatio ||
+                                        context.msBackingStorePixelRatio ||
+                                        context.oBackingStorePixelRatio ||
+                                        context.backingStorePixelRatio || 1;
+
+                        ratio = devicePixelRatio / backingStoreRatio;
+
+                        // upscale the canvas if the two ratios don't match
+                        if (devicePixelRatio !== backingStoreRatio) {
+
+                            var oldWidth = canvas.width;
+                            var oldHeight = canvas.height;
+
+                            canvas.width = oldWidth * ratio;
+                            canvas.height = oldHeight * ratio;
+
+                            canvas.style.width = oldWidth + 'px';
+                            canvas.style.height = oldHeight + 'px';
+
+                            var img = $('#output-image')[0];
+                            img.style.width = oldWidth + 'px';
+                            img.style.height = oldHeight + 'px';
+
+                            // now scale the context to counter
+                            // the fact that we've manually scaled
+                            // our canvas element
+                            context.scale(ratio, ratio);
+
+                        }
+
+                        page.render({canvasContext: context, viewport: viewport}).promise.then(function(){
                             $('#output-image')[0].src = canvas.toDataURL();
                         });
+                        //$('#output-image')[0].src = $('#output-canvas')[0].toDataURL();
                     });
                 });
             }
