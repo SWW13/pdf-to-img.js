@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8"/>
     <title>pdf-to-img</title>
-    <script type='text/javascript' src='js/jquery-2.1.0.min.js'></script>
-    <script type='text/javascript' src='js/pdf.min.js'></script>
-    <script type='text/javascript' src='js/compatibility.min.js'></script>
+    <script type='text/javascript' src='js/jquery-2.1.3.min.js'></script>
+    <script type='text/javascript' src='js/pdf.js'></script>
 </head>
 <body>
 
@@ -106,11 +106,11 @@
                         });
                         //$('#output-image')[0].src = $('#output-canvas')[0].toDataURL();
                     });
-                });
+                }, function(ex){ console.error(ex); });
             }
-            catch(e)
+            catch(ex)
             {
-                console.log(e);
+                console.error(ex);
                 $(body).append('<p>error on converting pdf.</p>');
             }
         };
